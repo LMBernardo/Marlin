@@ -373,7 +373,7 @@
    * Thermal Protection Variance Monitor - EXPERIMENTAL.
    * Kill the machine on a stuck temperature sensor. Disable if you get false positives.
    */
-  //#define THERMAL_PROTECTION_VARIANCE_MONITOR   // Detect a sensor malfunction preventing temperature updates
+  #define THERMAL_PROTECTION_VARIANCE_MONITOR   // Detect a sensor malfunction preventing temperature updates
 #endif
 
 #if ENABLED(PIDTEMP)
@@ -1269,6 +1269,12 @@
     #define CALIBRATION_PIN_PULLUP
   #endif
 #endif
+
+/**
+ * Multi-stepping sends steps in bursts to reduce MCU usage for high step-rates.
+ * This allows higher feedrates than the MCU could otherwise support.
+ */
+#define MULTISTEPPING_LIMIT   16  //: [1, 2, 4, 8, 16, 32, 64, 128]
 
 /**
  * Adaptive Step Smoothing increases the resolution of multi-axis moves, particularly at step frequencies
@@ -3229,7 +3235,7 @@
    * Beta feature!
    * Create a 50/50 square wave step pulse optimal for stepper drivers.
    */
-  #define SQUARE_WAVE_STEPPING
+  #define EDGE_STEPPING
 
   /**
    * Enable M122 debugging command for TMC stepper drivers.
