@@ -95,4 +95,21 @@ void GcodeSuite::M306_report(const bool forReplay/*=true*/) {
   }
 }
 
+void GcodeSuite::M308() {
+  const uint8_t e = TERN(HAS_MULTI_EXTRUDER, parser.intval('E', active_extruder), 0);
+  if (e >= (EXTRUDERS)) {
+    SERIAL_ECHOLNPGM("?(E)xtruder index out of range (0-", (EXTRUDERS) - 1, ").");
+    return;
+  }
+
+  MPC_t &mpc = thermalManager.temp_hotend[e].mpc;
+  if (parser.seen('S')) {
+    mpc.overshoot = parser.value_bool();
+    SERIAL_ECHOLNPGM("MPC overshoot changed: ", (mpc.overshoot), ".");
+    return;
+  }
+  mpc.overshoot = !(mpc.overshoot);
+  SERIAL_ECHOLNPGM("MPC overshoot toggled: ", (mpc.overshoot), ".");
+}
+
 #endif // MPCTEMP

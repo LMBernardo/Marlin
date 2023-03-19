@@ -378,6 +378,7 @@ namespace Language_en {
   LSTR MSG_MPC_EDIT                       = _UxGT("Edit * MPC");
   LSTR MSG_MPC_POWER                      = _UxGT("Heater Power");
   LSTR MSG_MPC_POWER_E                    = _UxGT("Power *");
+  LSTR MSG_MPC_OVERSHOOT                  = _UxGT("Allow overshoot");
   LSTR MSG_MPC_BLOCK_HEAT_CAPACITY        = _UxGT("Heat Capacity");
   LSTR MSG_MPC_BLOCK_HEAT_CAPACITY_E      = _UxGT("Heat Cap. *");
   LSTR MSG_SENSOR_RESPONSIVENESS          = _UxGT("Sensor Resp.");

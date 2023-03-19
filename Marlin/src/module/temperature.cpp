@@ -1524,6 +1524,7 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
       }
 
       // Update the modeled temperatures
+      // TODO: Possibly use overshoot here
       float blocktempdelta = hotend.soft_pwm_amount * mpc.heater_power * (MPC_dT / 127) / mpc.block_heat_capacity;
       blocktempdelta += (hotend.modeled_ambient_temp - hotend.modeled_block_temp) * ambient_xfer_coeff * MPC_dT / mpc.block_heat_capacity;
       hotend.modeled_block_temp += blocktempdelta;
@@ -1538,8 +1539,11 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
       hotend.modeled_sensor_temp += delta_to_apply;
 
       // Only correct ambient when close to steady state (output power is not clipped or asymptotic temperature is reached)
-      if (WITHIN(hotend.soft_pwm_amount, 1, 126) || fabs(blocktempdelta + delta_to_apply) < (MPC_STEADYSTATE * MPC_dT))
-        hotend.modeled_ambient_temp += delta_to_apply > 0.f ? _MAX(delta_to_apply, MPC_MIN_AMBIENT_CHANGE * MPC_dT) : _MIN(delta_to_apply, -MPC_MIN_AMBIENT_CHANGE * MPC_dT);
+      if (WITHIN(hotend.soft_pwm_amount, 1, 126) || fabs(blocktempdelta + delta_to_apply) < (MPC_STEADYSTATE * MPC_dT)){
+        if (!mpc.overshoot){
+          hotend.modeled_ambient_temp += delta_to_apply > 0.f ? _MAX(delta_to_apply, MPC_MIN_AMBIENT_CHANGE * MPC_dT) : _MIN(delta_to_apply, -MPC_MIN_AMBIENT_CHANGE * MPC_dT);
+        }
+      }
 
       float power = 0.0;
       if (hotend.target != 0 && !is_idling) {
@@ -1548,15 +1552,17 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
         power -= (hotend.modeled_ambient_temp - hotend.modeled_block_temp) * ambient_xfer_coeff;
       }
 
+      // TODO: Possibly use overshoot here
       float pid_output = power * 254.0f / mpc.heater_power + 1.0f;        // Ensure correct quantization into a range of 0 to 127
       pid_output = constrain(pid_output, 0, MPC_MAX);
 
-      /* <-- add a slash to enable
+      //* <-- add a slash to enable
         static uint32_t nexttime = millis() + 1000;
         if (ELAPSED(millis(), nexttime)) {
           nexttime += 1000;
           SERIAL_ECHOLNPGM("block temp ", hotend.modeled_block_temp,
                            ", celsius ", hotend.celsius,
+                           ", overshoot ", mpc.overshoot,
                            ", blocktempdelta ", blocktempdelta,
                            ", delta_to_apply ", delta_to_apply,
                            ", ambient ", hotend.modeled_ambient_temp,

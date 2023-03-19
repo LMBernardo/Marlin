@@ -822,6 +822,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
       #if ENABLED(MPCTEMP)
         case 306: M306(); break;                                  // M306: MPC autotune
+        case 308: M308(); break;                                  // M308: MPC allow overshoot
       #endif
 
       #if ENABLED(REPETIER_GCODE_M360)

@@ -381,10 +381,15 @@ typedef struct { float p, i, d, c, f; } raw_pidcf_t;
     static bool e_paused;               // Pause E filament permm tracking
     static int32_t e_position;          // For E tracking
     float heater_power;                 // M306 P
+    bool overshoot;                     // Allow heater overshoot
     float block_heat_capacity;          // M306 C
     float sensor_responsiveness;        // M306 R
     float ambient_xfer_coeff_fan0;      // M306 A
     float filament_heat_capacity_permm; // M306 H
+    static void overshoot_changed()
+    {
+      SERIAL_ECHOLNPGM("temperature.h - mpc.overshoot_changed.");
+    }
     #if ENABLED(MPC_INCLUDE_FAN)
       float fan255_adjustment;          // M306 F
       void applyFanAdjustment(const_float_t cf) { fan255_adjustment = cf - ambient_xfer_coeff_fan0; }
