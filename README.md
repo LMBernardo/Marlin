@@ -1,3 +1,42 @@
+# Custom Marlin Firmware
+
+My personal build of Marlin. This fork contains the following customizations:
+
+## Build setup for Ender 3 with SKR Mini E3 V2
+This fork is designed to compile and run on an Ender 3 Pro with a SKR Mini E3 V2 main board, and therefore must fit within the limited (256K) memory on the board.
+
+## Features Enabled:
+
+### Z-Probe Homing
+My printer is currently equipped with a Creatily CRTouch Z-probe. **THIS FIRMWARE HAS THE Z-MIN SWITCH DISABLED!!** If you are homing with a Z-MIN switch (e.g., the factory Z endstop switch), you will need to change this around line 788 in Configuration.h. This firmware is setup to perform Z homing roughly in the center of the bed via a BLTouch / CRTouch style Z-probe mounted with [this bracket](https://www.thingiverse.com/thing:3148733). It also has a default Z-offset from the probe of -2.34. This will need to be adjusted (even when you change nozzles), which can be done with the Z-offset wizard available under "Advanced Configuration" on the printer LCD screen.
+
+### Skew Correction
+As this fork represents my personal setup, **PLEASE NOTE THAT SKEW CORRECTION IS ENABLED!!** The skew correction factors set in the firmware are measurements from my personal printer. Skew correction can be disabled around line 1815 in Configuration.h, or you can measure your own skew correction factors by printing a calibration cube.
+
+## Filament Run-out Sensor
+This firmware is setup to use a filament runout sensor. If you do not have one, you will need to disable this feature either in the firmware or in the "Configuration" menu on the printer LCD screen.
+
+### Bilinear Bed Leveling
+This firmware enables 16-point bilinear automatic bed leveling (ABL), optimized for speed via BLTouch / CRTouch high-speed mode and relatively quick XYZ movements. Multiple probing is enabled, with each point being measure by a fast probe followed by a slow probe to help smooth out probing tolerances.
+
+### Custom Spodermen Boot Screen And Status Icon
+So Spodermen can supervise your prints.
+
+### Arc-Welder Support
+Support for G2/G3 Arc commands is enabled, enable this in your slicer or OctoPrint to take advantage of firmware-calculated arcs.
+
+### Power Loss Recovery
+Power loss recovery for SD prints is enabled. Support for UPS power loss recovery via the power loss pin is also available, and setup for an active-high power loss signal. To support this feature, Advanced Park is enabled. This means that you can also pause and resume your prints.
+
+### Junction Deviation and S-Curve Acceleration
+Junction deviation and S-Curve acceleration are enabled. Some users have reported issues with these features, but I haven't noticed any change in quality either way. In theory, these should improve the quality of prints.
+
+### Quick Home
+The quick home feature is enabled, allowing the printer to home the X and Y axes at the same time.
+
+### Other Features
+A number of other things have been enabled and/or tweaked, that I might get around to documenting later.
+
 <p align="center"><img src="buildroot/share/pixmaps/logo/marlin-outrun-nf-500.png" height="250" alt="MarlinFirmware's logo" /></p>
 
 <h1 align="center">Marlin 3D Printer Firmware</h1>
@@ -35,7 +74,6 @@ To build and upload Marlin you will use one of these tools:
 
 - The free [Visual Studio Code](https://code.visualstudio.com/download) using the [Auto Build Marlin](https://marlinfw.org/docs/basics/auto_build_marlin.html) extension.
 - The free [Arduino IDE](https://www.arduino.cc/en/main/software) : See [Building Marlin with Arduino](https://marlinfw.org/docs/basics/install_arduino.html)
-- You can also use VSCode with devcontainer : See [Installing Marlin (VSCode devcontainer)](http://marlinfw.org/docs/basics/install_devcontainer_vscode.html).
 
 Marlin is optimized to build with the **PlatformIO IDE** extension for **Visual Studio Code**. You can still build Marlin with **Arduino IDE**, and we hope to improve the Arduino build experience, but at this time PlatformIO is the better choice.
 
