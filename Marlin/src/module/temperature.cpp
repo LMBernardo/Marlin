@@ -1493,7 +1493,17 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
 
       // At startup, initialize modeled temperatures
       if (isnan(hotend.modeled_block_temp)) {
+        // Hotend is hot - we should cool first to record ambient temperature
+        if (hotend.celsius > 30.0f) {
+          SERIAL_ECHOLNPGM("MPC: hotend is hot - cooling to ambient...");
+          setTargetHotend(0, ee);
+          TERN_(AUTOTEMP, planner.autotemp_update());
+          set_heating_message(ee, false);
+          (void)wait_for_hotend(ee, false, true);  // Wait for cooling
+        }
         hotend.modeled_ambient_temp = _MIN(30.0f, hotend.celsius);   // Cap initial value at reasonable max room temperature of 30C
+        SERIAL_ECHOLNPGM("MPC: hotend temp is ", hotend.celsius, "C.");
+        SERIAL_ECHOLNPGM("MPC: using ambient temp of ", hotend.modeled_ambient_temp, "C.");
         hotend.modeled_block_temp = hotend.modeled_sensor_temp = hotend.celsius;
       }
 
@@ -1557,9 +1567,9 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
       pid_output = constrain(pid_output, 0, MPC_MAX);
 
       //* <-- add a slash to enable
-        static uint32_t nexttime = millis() + 1000;
+        static uint32_t nexttime = millis() + 5000;
         if (ELAPSED(millis(), nexttime)) {
-          nexttime += 1000;
+          nexttime += 5000;
           SERIAL_ECHOLNPGM("block temp ", hotend.modeled_block_temp,
                            ", celsius ", hotend.celsius,
                            ", overshoot ", mpc.overshoot,
