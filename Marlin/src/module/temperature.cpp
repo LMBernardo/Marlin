@@ -1493,17 +1493,7 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
 
       // At startup, initialize modeled temperatures
       if (isnan(hotend.modeled_block_temp)) {
-        // Hotend is hot - we should cool first to record ambient temperature
-        if (hotend.celsius > 30.0f) {
-          SERIAL_ECHOLNPGM("MPC: hotend is hot - cooling to ambient...");
-          setTargetHotend(0, ee);
-          TERN_(AUTOTEMP, planner.autotemp_update());
-          set_heating_message(ee, false);
-          (void)wait_for_hotend(ee, false, true);  // Wait for cooling
-        }
         hotend.modeled_ambient_temp = _MIN(30.0f, hotend.celsius);   // Cap initial value at reasonable max room temperature of 30C
-        SERIAL_ECHOLNPGM("MPC: hotend temp is ", hotend.celsius, "C.");
-        SERIAL_ECHOLNPGM("MPC: using ambient temp of ", hotend.modeled_ambient_temp, "C.");
         hotend.modeled_block_temp = hotend.modeled_sensor_temp = hotend.celsius;
       }
 
@@ -1549,17 +1539,18 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
       hotend.modeled_sensor_temp += delta_to_apply;
 
       // Only correct ambient when close to steady state (output power is not clipped or asymptotic temperature is reached)
-      if (WITHIN(hotend.soft_pwm_amount, 1, 126) || fabs(blocktempdelta + delta_to_apply) < (MPC_STEADYSTATE * MPC_dT)){
-        if (!mpc.overshoot){
+      if (WITHIN(hotend.soft_pwm_amount, 1, 126) || fabs(blocktempdelta + delta_to_apply) < (MPC_STEADYSTATE * MPC_dT))
           hotend.modeled_ambient_temp += delta_to_apply > 0.f ? _MAX(delta_to_apply, MPC_MIN_AMBIENT_CHANGE * MPC_dT) : _MIN(delta_to_apply, -MPC_MIN_AMBIENT_CHANGE * MPC_dT);
-        }
-      }
 
       float power = 0.0;
       if (hotend.target != 0 && !is_idling) {
-        // Plan power level to get to target temperature in 2 seconds
-        power = (hotend.target - hotend.modeled_block_temp) * mpc.block_heat_capacity / 2.0f;
-        power -= (hotend.modeled_ambient_temp - hotend.modeled_block_temp) * ambient_xfer_coeff;
+        if (mpc.overshoot && hotend.target - hotend.celsius > 0) {
+            power = 127;
+        } else {
+          // Plan power level to get to target temperature in 2 seconds
+          power = (hotend.target - hotend.modeled_block_temp) * mpc.block_heat_capacity / 2.0f;
+          power -= (hotend.modeled_ambient_temp - hotend.modeled_block_temp) * ambient_xfer_coeff;
+        }
       }
 
       // TODO: Possibly use overshoot here
@@ -1568,7 +1559,7 @@ void Temperature::mintemp_error(const heater_id_t heater_id) {
 
       //* <-- add a slash to enable
         static uint32_t nexttime = millis() + 5000;
-        if (ELAPSED(millis(), nexttime)) {
+        if (mpc.overshoot && ELAPSED(millis(), nexttime)) {
           nexttime += 5000;
           SERIAL_ECHOLNPGM("block temp ", hotend.modeled_block_temp,
                            ", celsius ", hotend.celsius,
