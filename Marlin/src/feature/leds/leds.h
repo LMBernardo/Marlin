@@ -44,6 +44,12 @@
   #include "blinkm.h"
 #endif
 
+#if ENABLED(APA102)
+  #define _APA102_INCLUDE_
+  #include "apa102.h"
+  #undef _APA102_INCLUDE_
+#endif
+
 #if ENABLED(PCA9533)
   #include "pca9533.h"
 #endif

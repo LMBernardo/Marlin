@@ -206,6 +206,10 @@ void LEDLights::set_color(const LEDColor &incol
 
   #endif
 
+  #if ENABLED(APA102)
+  // TODO: Do this
+  #endif
+
   #if EITHER(RGB_LED, RGBW_LED)
 
     // This variant uses 3-4 separate pins for the RGB(W) components.

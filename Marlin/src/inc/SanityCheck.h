@@ -2761,7 +2761,7 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS
  * LED Control Menu requirements
  */
 #if ENABLED(LED_CONTROL_MENU) && !HAS_COLOR_LEDS
-  #error "LED_CONTROL_MENU requires BLINKM, RGB_LED, RGBW_LED, PCA9533, PCA9632, or NEOPIXEL_LED."
+  #error "LED_CONTROL_MENU requires BLINKM, RGB_LED, RGBW_LED, PCA9533, PCA9632, APA102, or NEOPIXEL_LED."
 #endif
 
 /**
@@ -3000,7 +3000,7 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS
  */
 #define _RGB_TEST (PINS_EXIST(RGB_LED_R, RGB_LED_G, RGB_LED_B))
 #if ENABLED(PRINTER_EVENT_LEDS) && !HAS_COLOR_LEDS
-  #error "PRINTER_EVENT_LEDS requires BLINKM, PCA9533, PCA9632, RGB_LED, RGBW_LED or NEOPIXEL_LED."
+  #error "PRINTER_EVENT_LEDS requires BLINKM, PCA9533, PCA9632, RGB_LED, RGBW_LED, APA102, or NEOPIXEL_LED."
 #elif ENABLED(RGB_LED)
   #if !_RGB_TEST
     #error "RGB_LED requires RGB_LED_R_PIN, RGB_LED_G_PIN, and RGB_LED_B_PIN."
@@ -3013,6 +3013,23 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS
   #endif
 #endif
 #undef _RGB_TEST
+
+/**
+ * APA102 Requirements
+ */
+#define _APA102_PINS_TEST (PINS_EXIST(APA102_CLOCK, APA102_DATA))
+#if ENABLED(APA102)
+  #if !_APA102_PINS_TEST
+    #error "APA102 requires APA102_CLOCK_PIN and APA102_DATA_PIN"
+  #endif
+  #if (!APA102_PIXELS || APA102_PIXELS < 1)
+    #error "APA102 requires APA102_PIXELS > 0"
+  #endif
+  #if (!APA102_BRIGHTNESS || !(WITHIN(APA102_BRIGHTNESS, 0, 255)))
+    #error "APA102_BRIGHTNESS must be between 0 and 255"
+  #endif
+#endif
+#undef _APA102_PINS_TEST
 
 // NeoPixel requirements
 #if ENABLED(NEOPIXEL_LED)
