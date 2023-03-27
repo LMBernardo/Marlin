@@ -3407,12 +3407,13 @@
 
 #if ENABLED(APA102)
   // TODO: Reasonable defaults
-  #define APA102_CLOCK_PIN 34      // LED Clock Input Pin (CI)
-  #define APA102_DATA_PIN 43       // LED Data Input Pin  (DI)
-  #define APA102_PIXELS 2          // Number of LEDs in the strip
-  #define APA102_BRIGHTNESS 127    // Initial brightness (0-255)
-  #define APA102_COLOR 0x16C116    // Initial color (24-bit RGB)
-  #define APA102_STARTUP_TEST      // Cycle through colors at startup
+  #define APA102_CLOCK_PIN 34              // LED Clock Pin [CLOCK_PIN]->(CI)
+  #define APA102_DATA_PIN 43               // LED Data Pin  [DATA_PIN]->(DI)
+  #define APA102_PIXELS 2                  // Number of LEDs in the strip
+  #define APA102_COLOR 0x16C116            // Initial color (24-bit RGB)
+  #define APA102_STARTUP_BRIGHTNESS 127    // Initial brightness (0-255)
+  // Set default brightness for color change commands with LED_DEFAULT_BRIGHTNESS below
+  #define APA102_STARTUP_TEST              // Cycle through colors at startup
 #endif
 
 /**
@@ -3486,6 +3487,11 @@
   //#define NEOPIXEL_BKGD_COLOR         { 255, 255, 255, 0 }  // R, G, B, W
   //#define NEOPIXEL_BKGD_TIMEOUT_COLOR {  25,  25,  25, 0 }  // R, G, B, W
   //#define NEOPIXEL_BKGD_ALWAYS_ON       // Keep the backlight on when other NeoPixels are off
+#endif
+
+// Settings for LED types which support per-pixel "global" brightness
+#if ENABLED(APA102)
+  #define LED_DEFAULT_BRIGHTNESS 255  // Default brightness when changing color
 #endif
 
 /**

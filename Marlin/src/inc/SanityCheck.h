@@ -3022,16 +3022,27 @@ static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS
   #if !_APA102_PINS_TEST
     #error "APA102 requires APA102_CLOCK_PIN and APA102_DATA_PIN"
   #endif
-  #if (!APA102_PIXELS || APA102_PIXELS < 1)
+  #if (APA102_PIXELS < 1)
     #error "APA102 requires APA102_PIXELS > 0"
   #endif
-  #if (!APA102_BRIGHTNESS || !(WITHIN(APA102_BRIGHTNESS, 0, 255)))
-    #error "APA102_BRIGHTNESS must be between 0 and 255"
+  #if !(WITHIN(APA102_STARTUP_BRIGHTNESS, 0, 255))
+    #error "APA102_STARTUP_BRIGHTNESS must be between 0 and 255"
   #endif
 #endif
 #undef _APA102_PINS_TEST
 
-// NeoPixel requirements
+/**
+ * LED Global Brightness Requirements
+ */
+#if ENABLED(APA102)
+  #if !(WITHIN(LED_DEFAULT_BRIGHTNESS, 0, 255))
+    #error "LED_DEFAULT_BRIGHTNESS must be between 0 and 255"
+  #endif
+#endif
+
+/**
+ * NeoPixel Requirements
+ */
 #if ENABLED(NEOPIXEL_LED)
   #if !PIN_EXISTS(NEOPIXEL) || NEOPIXEL_PIXELS == 0
     #error "NEOPIXEL_LED requires NEOPIXEL_PIN and NEOPIXEL_PIXELS."

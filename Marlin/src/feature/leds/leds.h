@@ -29,9 +29,14 @@
 
 #include <string.h>
 
-// A white component can be passed
+// A white component can be passed.
 #if EITHER(RGBW_LED, PCA9632_RGBW)
   #define HAS_WHITE_LED 1
+#endif
+
+// APA102 has a global brightness value per-pixel
+#if ENABLED(APA102)
+  #define HAS_BRIGHTNESS 1
 #endif
 
 #if ENABLED(NEOPIXEL_LED)
@@ -45,9 +50,9 @@
 #endif
 
 #if ENABLED(APA102)
-  #define _APA102_INCLUDE_
+  #define _INC_FROM_LEDS_H_
   #include "apa102.h"
-  #undef _APA102_INCLUDE_
+  #undef _INC_FROM_LEDS_H_
 #endif
 
 #if ENABLED(PCA9533)
@@ -65,26 +70,31 @@ typedef struct LEDColor {
   uint8_t r, g, b
     OPTARG(HAS_WHITE_LED, w)
     OPTARG(NEOPIXEL_LED, i)
+    OPTARG(HAS_BRIGHTNESS, brightness)
   ;
 
   LEDColor() : r(255), g(255), b(255)
     OPTARG(HAS_WHITE_LED, w(255))
     OPTARG(NEOPIXEL_LED, i(NEOPIXEL_BRIGHTNESS))
+    OPTARG(HAS_BRIGHTNESS, brightness(LED_DEFAULT_BRIGHTNESS))
   {}
 
   LEDColor(const LEDColor&) = default;
 
-  LEDColor(uint8_t r, uint8_t g, uint8_t b OPTARG(HAS_WHITE_LED, uint8_t w=0) OPTARG(NEOPIXEL_LED, uint8_t i=NEOPIXEL_BRIGHTNESS))
-    : r(r), g(g), b(b) OPTARG(HAS_WHITE_LED, w(w)) OPTARG(NEOPIXEL_LED, i(i)) {}
+  LEDColor(uint8_t r, uint8_t g, uint8_t b OPTARG(HAS_WHITE_LED, uint8_t w=0) OPTARG(NEOPIXEL_LED, uint8_t i=NEOPIXEL_BRIGHTNESS) OPTARG(HAS_BRIGHTNESS, uint8_t brightness=LED_DEFAULT_BRIGHTNESS))
+    : r(r), g(g), b(b) OPTARG(HAS_WHITE_LED, w(w)) OPTARG(NEOPIXEL_LED, i(i)) OPTARG(HAS_BRIGHTNESS, brightness(brightness)) {}
 
   LEDColor(const uint8_t (&rgbw)[4]) : r(rgbw[0]), g(rgbw[1]), b(rgbw[2])
     OPTARG(HAS_WHITE_LED, w(rgbw[3]))
     OPTARG(NEOPIXEL_LED, i(NEOPIXEL_BRIGHTNESS))
+    OPTARG(HAS_BRIGHTNESS, brightness(LED_DEFAULT_BRIGHTNESS))
   {}
 
   LEDColor& operator=(const uint8_t (&rgbw)[4]) {
     r = rgbw[0]; g = rgbw[1]; b = rgbw[2];
     TERN_(HAS_WHITE_LED, w = rgbw[3]);
+    // TODO: Consider options to allow set brightness via =
+    // TERN_(HAS_BRIGHTNESS, brightness = LED_DEFAULT_BRIGHTNESS);
     return *this;
   }
 
@@ -96,7 +106,7 @@ typedef struct LEDColor {
   bool operator!=(const LEDColor &right) { return !operator==(right); }
 
   bool is_off() const {
-    return 3 > r + g + b + TERN0(HAS_WHITE_LED, w);
+    return 3 > r + g + b + TERN0(HAS_WHITE_LED, w) || TERN0(HAS_BRIGHTNESS, brightness < 1);
   }
 } LEDColor;
 
@@ -138,14 +148,21 @@ public:
 
   static void set_color(const LEDColor &color
     OPTARG(NEOPIXEL_IS_SEQUENTIAL, bool isSequence=false)
+    OPTARG(HAS_BRIGHTNESS, uint8_t brightness=LED_DEFAULT_BRIGHTNESS)
   );
 
   static void set_color(uint8_t r, uint8_t g, uint8_t b
     OPTARG(HAS_WHITE_LED, uint8_t w=0)
     OPTARG(NEOPIXEL_LED, uint8_t i=NEOPIXEL_BRIGHTNESS)
     OPTARG(NEOPIXEL_IS_SEQUENTIAL, bool isSequence=false)
+    OPTARG(HAS_BRIGHTNESS, uint8_t brightness=LED_DEFAULT_BRIGHTNESS)
   ) {
-    set_color(LEDColor(r, g, b OPTARG(HAS_WHITE_LED, w) OPTARG(NEOPIXEL_LED, i)) OPTARG(NEOPIXEL_IS_SEQUENTIAL, isSequence));
+    set_color(LEDColor(r, g, b
+                        OPTARG(HAS_WHITE_LED, w) 
+                        OPTARG(NEOPIXEL_LED, i)) 
+                        OPTARG(NEOPIXEL_IS_SEQUENTIAL, isSequence) 
+                        OPTARG(HAS_BRIGHTNESS, brightness
+              ));
   }
 
   static void set_off()   { set_color(LEDColorOff()); }

@@ -152,12 +152,14 @@ void LEDLights::setup() {
   #endif // PCA9632 && RGB_STARTUP_TEST
 
   TERN_(NEOPIXEL_LED, neo.init());
+  TERN_(APA102, Marlin_APA102::init()); // Includes setup and startup test
   TERN_(PCA9533, PCA9533_init());
   TERN_(LED_USER_PRESET_STARTUP, set_default());
 }
 
 void LEDLights::set_color(const LEDColor &incol
   OPTARG(NEOPIXEL_IS_SEQUENTIAL, bool isSequence/*=false*/)
+  OPTARG(HAS_BRIGHTNESS, uint8_t brightness/*=LED_DEFAULT_BRIGHTNESS*/)
 ) {
 
   #if ENABLED(NEOPIXEL_LED)
@@ -207,7 +209,10 @@ void LEDLights::set_color(const LEDColor &incol
   #endif
 
   #if ENABLED(APA102)
-  // TODO: Do this
+    // TODO: Allow sequential write to individual pixels, as with NeoPixels
+    Marlin_APA102::set_all_color((incol.r << 16) + (incol.g << 8) + incol.b);
+    Marlin_APA102::set_all_brightness(brightness);
+    Marlin_APA102::show();
   #endif
 
   #if EITHER(RGB_LED, RGBW_LED)

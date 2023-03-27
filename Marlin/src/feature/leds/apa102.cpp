@@ -34,41 +34,87 @@
 #include "../../core/utility.h"
 #endif
 
-Marlin_APA102 apa102;
+// Initialize members
+std::vector<uint32_t> Marlin_APA102::d_pixels{};
 
-void Marlin_APA102::init(const pindex_t num_pixels) {
-    if (d_init) return;
 
-    // TODO: We probably want to set pins low first, or maybe after. We probably don't need to do it first AND after
+// Public methods
+void Marlin_APA102::init() {
+    // It would be best to set the pins LOW before setting them to OUTPUT...
     reset_pins();
     SET_OUTPUT(APA102_CLOCK_PIN);
     SET_OUTPUT(APA102_DATA_PIN);
+    // ... but I'm not sure if that will work on all platforms.
     reset_pins();
 
-    // Initialize all to off
+    // Initialize all to off, and set startup brightness
     for (int i = 0; i < APA102_PIXELS; ++i) d_pixels.push_back(0);
-
-    set_all_brightness(APA102_BRIGHTNESS);  //  0 .. 255 range
-    show();
+    set_all_brightness(APA102_STARTUP_BRIGHTNESS);  //  0 .. 255 range
 
 #if ENABLED(APA102_STARTUP_TEST)
     set_all_color(0xFF0000);
+    show();
     safe_delay(500);
     set_all_color(0x00FF00);
+    show();
     safe_delay(500);
     set_all_color(0x0000FF);
+    show();
     safe_delay(500);
 #endif
 
     set_all_color(APA102_COLOR);  // 24 bit RGB value
     show();
-
-    d_init = true;
 }
 
-void Marlin_APA102::tick(unsigned int i) {
-    WRITE(APA102_CLOCK_PIN, LOW);
-    while (i-- > 0) {
+void Marlin_APA102::show() {
+    start_frame();
+    for (const auto& pixel : d_pixels) data_frame(pixel, 32);
+    end_frame();
+}
+
+pixel_t Marlin_APA102::pixel(const pindex_t index) {
+    return d_pixels[index];
+}
+
+color_t Marlin_APA102::pixel_color(const pindex_t index) {
+    if (index > d_pixels.size()) return 0;
+    return d_pixels[index] & PIXEL_COLOR_BITS;
+}
+
+brightness_t Marlin_APA102::pixel_brightness(const pindex_t index) {
+    if (index > d_pixels.size()) return 0;
+    return (d_pixels[index] & PIXEL_BRIGHTNESS_BITS) >> 24;
+}
+
+const std::vector<pixel_t>& Marlin_APA102::pixels() {
+    return d_pixels;
+}
+
+void Marlin_APA102::pixel_colors(std::vector<color_t>& out) {
+    std::transform(d_pixels.cbegin(), d_pixels.cend(), std::back_inserter(out), [](pixel_t pixel){
+        return pixel & PIXEL_COLOR_BITS;
+    });
+};
+void Marlin_APA102::pixel_brightnesses(std::vector<brightness_t>& out) {
+    std::transform(d_pixels.cbegin(), d_pixels.cend(), std::back_inserter(out), [](pixel_t pixel){
+        return (pixel & PIXEL_BRIGHTNESS_BITS) >> 24;
+    });
+};
+
+
+// Private methods
+void Marlin_APA102::tick(unsigned int cycles/* =1 */) {
+    while (cycles-- > 0) {
+        /*
+         * 2µs per cycle limits us to 500MHz refresh, but
+         * the APA102 has a 15 MHz max clock and the datasheet
+         * recommends < 2MHz for "lighting applications" (??)
+         * Therefore, we need some way to limit the clock speed.
+         * ( The SK9822 supports up to 30 MHz clock speed )
+         * There are probably faster ways to do this, but really
+         * we should just use the SPI interface anyway (TODO#1)
+        */
         delayMicroseconds(1);
         WRITE(APA102_CLOCK_PIN, HIGH);
         delayMicroseconds(1);
@@ -76,42 +122,13 @@ void Marlin_APA102::tick(unsigned int i) {
     }
 }
 
-template <class O, class B, class V>
-void Marlin_APA102::set_bits(O& out, const B& bits, V& val, uint8_t shift) {
-    // if (shift >= sizeof(out) * 8) {
-    //     throw std::invalid_argument("Attempting to left shift " + std::to_string(shift) + " times on a " + std::to_string(sizeof(out) * 8) + " bit number");
-    // }
-    if (shift >= sizeof(out)*8){
-      std::printf("Attempted to left-shift %d times on a %d-bit number\n", shift, sizeof(out)*8);
-      return;
-    }
-    O new_val = static_cast<O>(val) << shift;
-    out &= ~bits;
-    out |= new_val & bits;
-}
-
-template <class T>
-uint8_t Marlin_APA102::get_data_bit(const T data, const uint8_t shift) {
-    switch (data) {
-        case 0:
-            return LOW;
-        case 1:
-            return HIGH;
-        default:
-            const int bits = sizeof(data) * 8;
-            // if (shift >= bits) throw std::out_of_range("Attempted to left shift " + std::to_string(shift) + " times on a " + std::to_string(bits) + " bit number");
-            if (shift >= bits) return 0;
-            return (data << shift) & (1 << (bits - 1)) ? HIGH : LOW;
-    }
-}
-
-void Marlin_APA102::data_frame(pixel_t data, uint8_t size) {
+void Marlin_APA102::data_frame(pixel_t data /* =LOW */, uint8_t size /* =32 */) {
     if (size > 32) size = 32;
     reset_pins();
     // We'll send MSB-first, so we need to shift out any unused upper bits
     data <<= 32 - size;
     // Send bits of data value
-    for (uint8_t i = 0; i < size; ++i) WRITE_BIT(get_data_bit(data, i));
+    for (uint8_t i = 0; i < size; ++i) WRITE_BIT(get_bit(data, i));
 }
 
 #endif  // APA102_LED
